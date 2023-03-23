@@ -235,7 +235,7 @@ impl Pinger {
 
                     drop_cap_net_raw_caps_from_effective();
                 }
-            });
+            })?;
 
         Ok(Pinger {
             channel: rx,

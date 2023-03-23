@@ -66,7 +66,7 @@ impl Pinger {
                         });
                     }
                 }),
-        ));
+        ))?;
         Ok(Pinger {
             channel: rx,
             ping_thread,
