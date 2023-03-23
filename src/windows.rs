@@ -1,6 +1,11 @@
-use crate::Pinger;
 use dns_lookup::lookup_host;
-use std::{net::IpAddr, sync::mpsc, thread, time::Duration};
+use std::{
+    error::Error,
+    net::IpAddr,
+    sync::mpsc,
+    thread::{self, JoinHandle},
+    time::Duration,
+};
 use tokio::{sync::oneshot, time};
 use winping::{AsyncPinger as WinPinger, Buffer};
 
@@ -20,11 +25,10 @@ impl Drop for Pinger {
 
 impl Pinger {
     pub fn new(
-        &self,
         addr_in: String,
         interval: Duration,
-        interface: Option<String>,
-    ) -> Result<Pinger> {
+        _interface: Option<String>,
+    ) -> Result<Pinger, Box<dyn Error>> {
         let addr = match addr_in.parse::<IpAddr>() {
             Err(_) => {
                 let ips = lookup_host(&addr_in)?;
@@ -54,7 +58,7 @@ impl Pinger {
                             let pinger = WinPinger::new();
                             loop {
                                 let buffer = Buffer::new();
-                                if let Ok(rtt) = pinger.send(parsed_ip, buffer).await.result {
+                                if let Ok(rtt) = pinger.send(addr, buffer).await.result {
                                     tx.try_send(Duration::from_millis(rtt as u64)).ok();
                                 }
                                 time::sleep(interval).await;
@@ -65,8 +69,8 @@ impl Pinger {
                             let _ = exit_receiver.await;
                         });
                     }
-                }),
-        ))?;
+                })?,
+        ));
         Ok(Pinger {
             channel: rx,
             ping_thread,

@@ -11,4 +11,4 @@ pub use linux::{ping_with_interval, Pinger};
 pub mod windows;
 
 #[cfg(windows)]
-pub use linux::{ping_with_interval, Pinger};
+pub use windows::{ping_with_interval, Pinger};

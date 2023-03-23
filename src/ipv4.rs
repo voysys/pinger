@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use std::error::Error;
 
 const MINIMUM_PACKET_SIZE: usize = 20;

@@ -1,3 +1,5 @@
+#![allow(unused)]
+
 use std::{error::Error, io::Write};
 
 pub const ICMP_HEADER_SIZE: usize = 8;
