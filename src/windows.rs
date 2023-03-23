@@ -21,17 +21,17 @@ impl Drop for Pinger {
 impl Pinger {
     pub fn new(
         &self,
-        addr: String,
+        addr_in: String,
         interval: Duration,
         interface: Option<String>,
     ) -> Result<Pinger> {
-        let parsed_ip: IpAddr = match target.parse() {
+        let addr = match addr_in.parse::<IpAddr>() {
             Err(_) => {
-                let things = lookup_host(target.as_str())?;
-                if things.is_empty() {
-                    Err(format!("Unknown host: {target}"))
+                let ips = lookup_host(&addr_in)?;
+                if ips.is_empty() {
+                    Err(format!("Unknown host: {addr_in}"))
                 } else {
-                    Ok(things[0])
+                    Ok(ips[0])
                 }
             }
             Ok(addr) => Ok(addr),
@@ -41,29 +41,31 @@ impl Pinger {
         let (notify_exit_sender, exit_receiver) = oneshot::channel();
         let ping_thread = Some((
             notify_exit_sender,
-            thread::spawn({
-                move || {
-                    let runtime = tokio::runtime::Builder::new_current_thread()
-                        .enable_all()
-                        .build()
-                        .unwrap();
+            thread::Builder::new()
+                .name(format!("Ping {}", addr))
+                .spawn({
+                    move || {
+                        let runtime = tokio::runtime::Builder::new_current_thread()
+                            .enable_all()
+                            .build()
+                            .unwrap();
 
-                    runtime.spawn(async move {
-                        let pinger = WinPinger::new();
-                        loop {
-                            let buffer = Buffer::new();
-                            if let Ok(rtt) = pinger.send(parsed_ip, buffer).await.result {
-                                tx.try_send(Duration::from_millis(rtt as u64)).ok();
+                        runtime.spawn(async move {
+                            let pinger = WinPinger::new();
+                            loop {
+                                let buffer = Buffer::new();
+                                if let Ok(rtt) = pinger.send(parsed_ip, buffer).await.result {
+                                    tx.try_send(Duration::from_millis(rtt as u64)).ok();
+                                }
+                                time::sleep(interval).await;
                             }
-                            time::sleep(interval).await;
-                        }
-                    });
+                        });
 
-                    runtime.block_on(async move {
-                        let _ = exit_receiver.await;
-                    });
-                }
-            }),
+                        runtime.block_on(async move {
+                            let _ = exit_receiver.await;
+                        });
+                    }
+                }),
         ));
         Ok(Pinger {
             channel: rx,

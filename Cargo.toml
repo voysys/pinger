@@ -4,7 +4,6 @@ version = "1.0.0"
 authors = ["Jonathan Nilsson <jonathan@voysys.se>"]
 edition = "2021"
 license = "MIT"
-description = "A small cross-platform library to execute the ping command and parse the output"
 repository = "https://github.com/voysys/pinger/"
 
 [dependencies]
