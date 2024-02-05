@@ -79,7 +79,8 @@ impl PingerTrait for LinuxPinger {
                                                         }
                                                     }
                                                     Err(e) => {
-                                                        panic!("Ping command failed - this should not happen, please verify the integrity of the ping command: {}", e.to_string())
+                                                        tx.send(PingResult::Failed("".to_string(), format!("Ping command failed - this should not happen, please verify the integrity of the ping command: {}", e.to_string()))).ok();
+                                                        break;
                                                     }
                                                 };
                                                 time::sleep(interval).await;
